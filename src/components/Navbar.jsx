@@ -4,43 +4,55 @@ import { useNavigate } from "react-router-dom";
 const Navbar = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [username, setUsername] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const navigate = useNavigate();
- const [username, setUsername] = useState(null);
+
+  // Apply saved theme on load
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
+
     const storedUser = localStorage.getItem("FormData");
-     if (storedUser) {
-    try {
-      const userObj = JSON.parse(storedUser);
-      if (userObj.name) {
-        setUsername(userObj.name); // show only the name, not whole object
-      } else {
+    if (storedUser) {
+      try {
+        const userObj = JSON.parse(storedUser);
+        if (userObj.name) setUsername(userObj.name);
+        else setUsername(null);
+      } catch {
         setUsername(null);
       }
-    } catch (err) {
-      // If parsing fails, fallback to null or the raw string
-      setUsername(null);
     }
-  }
+
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "light") {
+      document.body.classList.add("light-mode");
+      setIsDarkMode(false);
+    } else {
+      document.body.classList.add("dark-mode");
+      setIsDarkMode(true);
+    }
+
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const navLinks = [
-  { name: "DipCalculator" },
-  { name: "StrikeCalculator" },
-  { name: "iPad" },
-  { name: "Watch" },
-  { name: "AirPods" },
-  { name: "TV & Home" },
-  { name: "Merchandise" },
-  { name: "Support" },
-  // Conditionally add:
-  ...(username
-    ? [{ name: `Hii ${username}` }]
-    : [{ name: "LogIn", route: "/login" }]),
-];
+  const toggleTheme = () => {
+    const isDark = !isDarkMode;
+    setIsDarkMode(isDark);
+    document.body.classList.toggle("dark-mode", isDark);
+    document.body.classList.toggle("light-mode", !isDark);
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+  };
 
+  const navLinks = [
+    { name: "DipCalculator" },
+    { name: "StrikeCalculator" },
+    { name: "Merchandise" },
+    { name: "Support", route:"/support" },
+    ...(username
+      ? [{ name: `Hii ${username}` }]
+      : [{ name: "LogIn", route: "/login" }]),
+  ];
 
   const handleLinkClick = (link) => {
     if (link.route) navigate(link.route);
@@ -90,30 +102,12 @@ const Navbar = () => {
             }}
           >
             {menuOpen ? (
-              <svg
-                width="24"
-                height="24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                viewBox="0 0 24 24"
-              >
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             ) : (
-              <svg
-                width="24"
-                height="24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                viewBox="0 0 24 24"
-              >
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                 <line x1="3" y1="12" x2="21" y2="12" />
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="18" x2="21" y2="18" />
@@ -179,35 +173,36 @@ const Navbar = () => {
           </ul>
         )}
 
-        {/* Search Icon (Desktop Only) */}
-        {!isMobile && (
-          <button
-            aria-label="Search"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "white",
-              fontSize: 20,
-              padding: 0,
-              userSelect: "none",
-            }}
-          >
-            <svg
-              width="20"
-              height="20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              viewBox="0 0 24 24"
+        {/* Search Icon + Theme Toggle */}
+        <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
+          {!isMobile && (
+            <button
+              aria-label="Search"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "white",
+                fontSize: 20,
+                padding: 0,
+                userSelect: "none",
+              }}
             >
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
-        )}
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          )}
+
+          {/* Theme Toggle Button */}
+<div className="glass-toggle" onClick={toggleTheme}>
+  <div className={`toggle-thumb ${isDarkMode ? "dark" : "light"}`}>
+    {isDarkMode ? "🌙" : "☀️"}
+  </div>
+</div>
+
+        </div>
       </div>
 
       {/* Mobile Menu */}

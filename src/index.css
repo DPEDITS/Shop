@@ -1,17 +1,105 @@
 :root {
+  --bg-color: #242424;
+  --text-color: rgba(255, 255, 255, 0.87);
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Theme override using body class */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+body.light-mode {
+  --bg-color: #555555;
+  --text-color: #213547;
+}
+
+body.dark-mode {
+  --bg-color: #242424;
+  --text-color: rgba(255, 255, 255, 0.87);
+}
+.glass-toggle {
+  width: 70px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 40px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.05),
+              0 0 12px rgba(0, 255, 255, 0.3),
+              0 0 20px rgba(0, 255, 255, 0.2);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+  overflow: hidden;
+}
+
+.glass-toggle:hover {
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4),
+              0 0 30px rgba(0, 255, 255, 0.3);
+}
+
+/* Toggle Thumb */
+.toggle-thumb {
+  width: 30px;
+  height: 30px;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  background: radial-gradient(circle at 30% 30%, #00f0ff, #0071e3);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.4),
+              0 0 20px rgba(0, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 15px;
+  transition: left 0.45s ease, background 0.45s ease, transform 0.5s ease;
+  animation: pulse-glow 2s infinite;
+}
+
+/* When in dark mode */
+.toggle-thumb.dark {
+  left: 37px;
+  background: radial-gradient(circle at 30% 30%, #00d0ff, #00d0ff);
+  box-shadow: 0 0 12px rgba(255, 0, 255, 0.5),
+              0 0 24px rgba(255, 0, 255, 0.3);
+  transform: rotate(360deg);
+}
+
+/* When in light mode */
+.toggle-thumb.light {
+  transform: rotate(0deg);
+}
+
+/* Pulse Animation */
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 94, 0, 0.4),
+                0 0 20px rgba(255, 94, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(255, 94, 0, 0.4),
+                0 0 28px rgba(255, 94, 0, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 94, 0, 0.4),
+                0 0 20px rgba(255, 94, 0, 0.4);
+  }
+}
+
 
 a {
   font-weight: 500;
@@ -21,8 +109,6 @@ a {
 a:hover {
   color: #535bf2;
 }
-
-
 
 h1 {
   font-size: 3.2em;
@@ -38,7 +124,7 @@ button {
   font-family: inherit;
   background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, background-color 0.25s, color 0.25s;
 }
 button:hover {
   border-color: #646cff;
@@ -48,14 +134,17 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* System Preference Fallback (Optional) */
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    --bg-color: #ffffff;
+    --text-color: #213547;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }
