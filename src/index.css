@@ -20,7 +20,7 @@ body {
 }
 
 body.light-mode {
-  --bg-color: #555555;
+  --bg-color: #dadada;
   --text-color: #213547;
 }
 
