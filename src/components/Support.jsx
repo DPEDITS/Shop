@@ -77,7 +77,7 @@ const Support = () => {
                         fontSize: "3rem",
                         marginBottom: "0.5rem",
                         lineHeight: 1.1,
-                        color: "white",
+                        color: "grey",
                     }}
                 >
                     How can we help you?
