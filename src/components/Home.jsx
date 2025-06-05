@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const Home = () => {
   const [isMobile, setIsMobile] = useState(false);
-  const [gradientStyle, setGradientStyle] = useState({ opacity: 0 });
   const [compassRotation, setCompassRotation] = useState(0);
+  const [rockHammerRotation, setRockHammerRotation] = useState(0);
+  const canvasRef = useRef(null);
+  const animationFrameId = useRef(null);
+  const mousePos = useRef({ x: null, y: null });
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -12,8 +15,17 @@ const Home = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Device Orientation Compass Logic
+  // Device Orientation Compass Logic (only on mobile)
   useEffect(() => {
+    if (!isMobile) return;
+
+    const handleOrientation = (event) => {
+      const alpha = event.alpha;
+      if (alpha != null) {
+        setCompassRotation(360 - alpha);
+      }
+    };
+
     const requestPermission = async () => {
       if (
         typeof DeviceOrientationEvent !== "undefined" &&
@@ -28,44 +40,144 @@ const Home = () => {
           console.error("Device orientation permission denied", error);
         }
       } else {
-        // For Android or other platforms
         window.addEventListener("deviceorientation", handleOrientation, true);
       }
     };
-  
-    const handleOrientation = (event) => {
-      const alpha = event.alpha;
-      if (alpha != null) {
-        setCompassRotation(360 - alpha); // Adjust to rotate in compass direction
-      }
-    };
-  
+
     requestPermission();
-  
+
     return () => {
       window.removeEventListener("deviceorientation", handleOrientation);
     };
+  }, [isMobile]);
+
+  // Particle Network for ALL screens
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    let width = (canvas.width = canvas.offsetWidth);
+    let height = (canvas.height = canvas.offsetHeight);
+
+    const particlesCount = 80;
+    const maxDistance = 150;
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.7;
+        this.vy = (Math.random() - 0.5) * 0.7;
+        this.radius = 2;
+      }
+
+      move() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x <= 0 || this.x >= width) this.vx *= -1;
+        if (this.y <= 0 || this.y >= height) this.vy *= -1;
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#0071e3";
+        ctx.fill();
+      }
+    }
+
+    const particles = [];
+    for (let i = 0; i < particlesCount; i++) {
+      particles.push(new Particle());
+    }
+
+    const drawNetwork = () => {
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach((p) => p.draw());
+
+      for (let i = 0; i < particlesCount; i++) {
+        for (let j = i + 1; j < particlesCount; j++) {
+          const p1 = particles[i];
+          const p2 = particles[j];
+          const dx = p1.x - p2.x;
+          const dy = p1.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < maxDistance) {
+            const alpha = 1 - dist / maxDistance;
+            ctx.strokeStyle = `rgba(0, 113, 227, ${alpha * 0.6})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      if (mousePos.current.x !== null && mousePos.current.y !== null) {
+        particles.forEach((p) => {
+          const dx = p.x - mousePos.current.x;
+          const dy = p.y - mousePos.current.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < maxDistance) {
+            const alpha = 1 - dist / maxDistance;
+            ctx.strokeStyle = `rgba(255, 69, 0, ${alpha * 0.7})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mousePos.current.x, mousePos.current.y);
+            ctx.stroke();
+          }
+        });
+      }
+    };
+
+    const animate = () => {
+      particles.forEach((p) => p.move());
+      drawNetwork();
+      animationFrameId.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    const handleResize = () => {
+      width = canvas.width = canvas.offsetWidth;
+      height = canvas.height = canvas.offsetHeight;
+    };
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationFrameId.current);
+    };
   }, []);
-  
+
+  // Handle mouse move on rock hammer (desktop)
+  const rockHammerRef = useRef(null);
+  const handleRockHammerMouseMove = (e) => {
+    if (isMobile) return;
+    const rect = rockHammerRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const dx = e.clientX - centerX;
+    const dy = e.clientY - centerY;
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    setRockHammerRotation(angle);
+  };
+
   const handleMouseMove = (e) => {
     if (isMobile) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    setGradientStyle({
-      opacity: 1,
-      background: `radial-gradient(circle at ${x}px ${y}px, rgba(0, 123, 255, 0.6), transparent 150px)`,
-      transition: "background 0.2s, opacity 0.5s",
-    });
+    const rect = canvasRef.current.getBoundingClientRect();
+    mousePos.current.x = e.clientX - rect.left;
+    mousePos.current.y = e.clientY - rect.top;
   };
 
   const handleMouseLeave = () => {
     if (isMobile) return;
-    setGradientStyle({
-      opacity: 0,
-      transition: "opacity 1s",
-    });
+    mousePos.current.x = null;
+    mousePos.current.y = null;
   };
 
   return (
@@ -85,8 +197,14 @@ const Home = () => {
         }}
       >
         <section
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
+          onMouseMove={(e) => {
+            handleMouseMove(e);
+            if (!isMobile) handleRockHammerMouseMove(e);
+          }}
+          onMouseLeave={() => {
+            handleMouseLeave();
+            setRockHammerRotation(0);
+          }}
           style={{
             height: "70vh",
             display: "flex",
@@ -102,27 +220,20 @@ const Home = () => {
             background: "rgba(0, 0, 0, 0.39)",
           }}
         >
-          {!isMobile && (
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                pointerEvents: "none",
-                ...gradientStyle,
-              }}
-            />
-          )}
-
-          {isMobile && (
-            <>
-              <div className="blob blob1" />
-              <div className="blob blob2" />
-              <div className="blob blob3" />
-            </>
-          )}
+          {/* Canvas rendered on both desktop and mobile */}
+          <canvas
+            ref={canvasRef}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 0,
+              borderRadius: 50,
+              pointerEvents: "none",
+            }}
+          />
 
           <h1
             style={{
@@ -174,87 +285,80 @@ const Home = () => {
             Buy Premium
           </button>
         </section>
-        <div
-        style={{
-          marginTop: "10px",
-          padding: "40px 0",
-          background: "rgba(0, 0, 0, 0.39)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          borderRadius:"50px",
-        }}
-      >
-        <div
+
+        {isMobile?(<div
           style={{
-            width: 120,
-            height: 120,
-            background: "rgba(255,255,255,0.05)",
-            borderRadius: "50%",
-            backdropFilter: "blur(10px)",
-            boxShadow: "0 0 20px rgba(0,123,255,0.4)",
+            marginTop: "10px",
+            padding: "40px 0",
+            background: "rgba(0, 0, 0, 0.39)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            transition: "transform 0.3s ease-out",
-            transform: `rotate(${compassRotation}deg)`,
+            borderRadius: "50px",
           }}
         >
-<svg width="90" height="90" viewBox="0 0 100 100">
-  {/* Circle Border */}
-  <circle
-    cx="50"
-    cy="50"
-    r="48"
-    stroke="#0071e3"
-    strokeWidth="4"
-    fill="none"
-  />
-
-  {/* North Tip - Red Triangle */}
-  <polygon
-    points="50,10 54,50 46,50"
-    fill="#ff4d4d"
-    style={{ transition: "all 0.3s ease" }}
-  />
-
-  {/* South Tip - White Triangle */}
-  <polygon
-    points="50,90 54,50 46,50"
-    fill="#ffffff"
-    style={{ transition: "all 0.3s ease" }}
-  />
-
-  {/* Center Dot */}
-  <circle cx="50" cy="50" r="4" fill="#fff" />
-
-  {/* North Label */}
-  <text
-    x="50"
-    y="20"
-    textAnchor="middle"
-    fontSize="10"
-    fill="#ffffff"
-    fontWeight="bold"
-  >
-    N
-  </text>
-
-  {/* South Label */}
-  <text
-    x="50"
-    y="95"
-    textAnchor="middle"
-    fontSize="10"
-    fill="#ffffff"
-    fontWeight="bold"
-  >
-    S
-  </text>
-</svg>
-
-        </div>
-      </div>
+          {/* Show compass on mobile, else show rock hammer on desktop */}
+          {isMobile ? (
+            <div
+              style={{
+                width: 120,
+                height: 120,
+                background: "rgba(255,255,255,0.05)",
+                borderRadius: "50%",
+                backdropFilter: "blur(10px)",
+                boxShadow: "0 0 20px rgba(0,123,255,0.4)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                transition: "transform 0.3s ease-out",
+                transform: `rotate(${compassRotation}deg)`,
+              }}
+            >
+              <svg width="90" height="90" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="48"
+                  stroke="#0071e3"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <polygon
+                  points="50,10 54,50 46,50"
+                  fill="#ff4d4d"
+                  style={{ transition: "all 0.3s ease" }}
+                />
+                <polygon
+                  points="50,90 54,50 46,50"
+                  fill="#ffffff"
+                  style={{ transition: "all 0.3s ease" }}
+                />
+                <circle cx="50" cy="50" r="4" fill="#fff" />
+                <text
+                  x="50"
+                  y="20"
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="#ffffff"
+                  fontWeight="bold"
+                >
+                  N
+                </text>
+                <text
+                  x="50"
+                  y="95"
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="#ffffff"
+                  fontWeight="bold"
+                >
+                  S
+                </text>
+              </svg>
+            </div>
+          ) : (null
+          )}
+        </div>):(null)}
       </div>
 
       <style>{`
@@ -310,6 +414,29 @@ const Home = () => {
         @keyframes drift3 {
           0%, 100% { transform: translate(0, 0); }
           50% { transform: translate(15px, -20px); }
+        }
+
+        .glowing-circle {
+          width: 140px;
+          height: 140px;
+          border-radius: 50%;
+          background: linear-gradient(270deg, #0071e3, #00c6ff, #005bb5);
+          background-size: 600% 600%;
+          animation: gradientGlow 8s ease infinite;
+          box-shadow: 0 0 30px #0071e3, 0 0 60px #00c6ff, 0 0 90px #005bb5;
+          filter: drop-shadow(0 0 10px #0071e3);
+        }
+
+        @keyframes gradientGlow {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
         }
       `}</style>
     </>
