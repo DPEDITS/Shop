@@ -52,7 +52,7 @@ const Support = () => {
       const data = await response.json();
 
       if (data.success) {
-        setResult("Form Submitted Successfully");
+        setResult("✅ Thank you for reaching out. We will get back to you shortly.");
         setForm({ name: "", email: "", message: "" });
         setSubmitted(true);
       } else {
