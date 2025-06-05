@@ -189,7 +189,7 @@ const Home = () => {
             '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif',
           color: "white",
           background: "rgba(0, 0, 0, 0.39)",
-          minHeight: "100vh",
+          minHeight: isMobile ? "100vh" : "70vh",
           borderRadius: 50,
           marginTop: 10,
           position: "relative",
