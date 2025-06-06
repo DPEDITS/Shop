@@ -287,14 +287,19 @@ const Home = () => {
               transform: `rotate(${compassRotation}deg)`,
             }}
           >
-            <svg width="90" height="90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="48" stroke="#0071e3" strokeWidth="4" fill="none" />
-              <polygon points="50,10 54,50 46,50" fill="#ff4d4d" />
-              <polygon points="50,90 54,50 46,50" fill="#ffffff" />
-              <circle cx="50" cy="50" r="4" fill="#fff" />
-              <text x="50" y="20" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">N</text>
-              <text x="50" y="95" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">S</text>
-            </svg>
+<svg width="90" height="90" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="48" stroke="#0071e3" strokeWidth="4" fill="none" />
+  <polygon points="50,10 54,50 46,50" fill="#ff4d4d" />
+  <polygon points="50,90 54,50 46,50" fill="#ffffff" />
+  <circle cx="50" cy="50" r="4" fill="#fff" />
+
+  {/* Direction Labels */}
+  <text x="50" y="12" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">N</text>
+  <text x="50" y="98" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">S</text>
+  <text x="88" y="54" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">E</text>
+  <text x="12" y="54" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">W</text>
+</svg>
+
           </div>
         </div>
       )}
