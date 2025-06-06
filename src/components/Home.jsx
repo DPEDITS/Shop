@@ -153,7 +153,46 @@ const Home = () => {
       cancelAnimationFrame(animationFrameId.current);
     };
   }, []);
-
+  const handleOrientation = (event) => {
+    let alpha = event.alpha;
+  
+    if (alpha == null) return;
+  
+    // Get the current device orientation angle
+    const orientation = window.screen.orientation?.angle ?? window.orientation ?? 0;
+  
+    // Adjust alpha based on orientation
+    let compassHeading;
+  
+    switch (orientation) {
+      case 0: // portrait
+        compassHeading = alpha;
+        break;
+      case 90: // landscape right
+        compassHeading = alpha - 90;
+        break;
+      case 180: // portrait upside down
+        compassHeading = alpha - 180;
+        break;
+      case -90:
+      case 270: // landscape left
+        compassHeading = alpha - 270;
+        break;
+      default:
+        compassHeading = alpha;
+    }
+  
+    // Normalize compassHeading to 0-360 range
+    if (compassHeading < 0) {
+      compassHeading += 360;
+    }
+    if (compassHeading >= 360) {
+      compassHeading -= 360;
+    }
+  
+    setCompassRotation(360 - compassHeading);
+  };
+  
   // Handle mouse move on rock hammer (desktop)
   const rockHammerRef = useRef(null);
   const handleRockHammerMouseMove = (e) => {
