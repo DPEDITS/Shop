@@ -259,7 +259,7 @@ const Home = () => {
         </section>
       </div>
 
-      {/* Compass Section (separate) */}
+      {/* Compass Section (Mobile Only) */}
       {isMobile && (
         <div
           style={{
@@ -276,30 +276,55 @@ const Home = () => {
             style={{
               width: 120,
               height: 120,
-              background: "rgba(255,255,255,0.05)",
-              borderRadius: "50%",
-              backdropFilter: "blur(10px)",
-              boxShadow: "0 0 20px rgba(0,123,255,0.4)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              transition: "transform 0.3s ease-out",
-              transform: `rotate(${compassRotation}deg)`,
+              position: "relative",
             }}
           >
-<svg width="90" height="90" viewBox="0 0 100 100">
-  <circle cx="50" cy="50" r="48" stroke="#0071e3" strokeWidth="4" fill="none" />
-  <polygon points="50,10 54,50 46,50" fill="#ff4d4d" />
-  <polygon points="50,90 54,50 46,50" fill="#ffffff" />
-  <circle cx="50" cy="50" r="4" fill="#fff" />
+            {/* Static Compass Base */}
+            <svg
+              width="120"
+              height="120"
+              viewBox="0 0 100 100"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                zIndex: 0,
+              }}
+            >
+              <circle cx="50" cy="50" r="48" stroke="#0071e3" strokeWidth="4" fill="none" />
+              <polygon points="50,90 54,50 46,50" fill="#ffffff" />
+              <circle cx="50" cy="50" r="4" fill="#fff" />
+              <text x="50" y="12" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">
+                N
+              </text>
+              <text x="50" y="98" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">
+                S
+              </text>
+              <text x="88" y="54" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">
+                E
+              </text>
+              <text x="12" y="54" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">
+                W
+              </text>
+            </svg>
 
-  {/* Direction Labels */}
-  <text x="50" y="12" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">N</text>
-  <text x="50" y="98" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">S</text>
-  <text x="88" y="54" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">E</text>
-  <text x="12" y="54" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">W</text>
-</svg>
-
+            {/* Rotating Needle Only */}
+            <svg
+              width="120"
+              height="120"
+              viewBox="0 0 100 100"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                transform: `rotate(${compassRotation}deg)`,
+                transformOrigin: "50% 50%",
+                transition: "transform 0.3s ease-out",
+                zIndex: 1,
+              }}
+            >
+              <polygon points="50,10 54,50 46,50" fill="#ff4d4d" />
+            </svg>
           </div>
         </div>
       )}
