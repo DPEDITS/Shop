@@ -4,6 +4,8 @@ const Home = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [compassRotation, setCompassRotation] = useState(0);
   const [rockHammerRotation, setRockHammerRotation] = useState(0);
+  const [tiltX, setTiltX] = useState(0);
+  const [tiltY, setTiltY] = useState(0);
   const canvasRef = useRef(null);
   const animationFrameId = useRef(null);
   const mousePos = useRef({ x: null, y: null });
@@ -15,7 +17,7 @@ const Home = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Device Orientation Compass Logic (only on mobile)
+  // Device Orientation Compass Logic + Tilt for blobs (only on mobile)
   useEffect(() => {
     if (!isMobile) return;
 
@@ -24,6 +26,17 @@ const Home = () => {
       if (alpha != null) {
         setCompassRotation(360 - alpha);
       }
+
+      // Using beta and gamma for tilt (parallax blobs)
+      let xTilt = event.gamma || 0; // left-right tilt [-90,90]
+      let yTilt = event.beta || 0;  // front-back tilt [-180,180]
+
+      // Clamp and smooth values for better effect
+      xTilt = Math.min(Math.max(xTilt, -30), 30);
+      yTilt = Math.min(Math.max(yTilt, -30), 30);
+
+      setTiltX(xTilt);
+      setTiltY(yTilt);
     };
 
     const requestPermission = async () => {
@@ -51,8 +64,10 @@ const Home = () => {
     };
   }, [isMobile]);
 
-  // Particle Network for ALL screens
+  // Particle Network for desktop only
   useEffect(() => {
+    if (isMobile) return; // skip particle animation on mobile
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     let width = (canvas.width = canvas.offsetWidth);
@@ -152,7 +167,7 @@ const Home = () => {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId.current);
     };
-  }, []);
+  }, [isMobile]);
 
   // Handle mouse move on rock hammer (desktop)
   const rockHammerRef = useRef(null);
@@ -179,6 +194,23 @@ const Home = () => {
     mousePos.current.x = null;
     mousePos.current.y = null;
   };
+
+  // Mobile blobs style (parallax by tilt)
+  const blobStyle = (size, top, left, color, index) => ({
+    position: "absolute",
+    width: size,
+    height: size,
+    backgroundColor: color,
+    borderRadius: "50%",
+    filter: "blur(40px)",
+    opacity: 0.6,
+    top,
+    left,
+    pointerEvents: "none",
+    transform: `translate3d(${tiltX * (index + 1)}px, ${tiltY * (index + 1)}px, 0)`,
+    transition: "transform 0.1s ease-out",
+    mixBlendMode: "screen",
+  });
 
   return (
     <>
@@ -220,20 +252,31 @@ const Home = () => {
             background: "rgba(0, 0, 0, 0.39)",
           }}
         >
-          {/* Canvas rendered on both desktop and mobile */}
-          <canvas
-            ref={canvasRef}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              zIndex: 0,
-              borderRadius: 50,
-              pointerEvents: "none",
-            }}
-          />
+          {/* Canvas rendered only on desktop */}
+          {!isMobile && (
+            <canvas
+              ref={canvasRef}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 0,
+                borderRadius: 50,
+                pointerEvents: "none",
+              }}
+            />
+          )}
+
+          {/* Mobile floating blobs */}
+          {isMobile && (
+            <>
+              <div style={blobStyle(150, "20%", "20%", "#0071e3", 1)} />
+              <div style={blobStyle(200, "50%", "65%", "#00c6ff", 2)} />
+              <div style={blobStyle(120, "75%", "30%", "#005bb5", 3)} />
+            </>
+          )}
 
           <h1
             style={{
@@ -286,19 +329,19 @@ const Home = () => {
           </button>
         </section>
 
-        {isMobile?(<div
-          style={{
-            marginTop: "10px",
-            padding: "40px 0",
-            background: "rgba(0, 0, 0, 0.39)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            borderRadius: "50px",
-          }}
-        >
-          {/* Show compass on mobile, else show rock hammer on desktop */}
-          {isMobile ? (
+        {isMobile ? (
+          <div
+            style={{
+              marginTop: "10px",
+              padding: "40px 0",
+              background: "rgba(0, 0, 0, 0.39)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              borderRadius: "50px",
+            }}
+          >
+            {/* Show compass on mobile */}
             <div
               style={{
                 width: 120,
@@ -356,9 +399,8 @@ const Home = () => {
                 </text>
               </svg>
             </div>
-          ) : (null
-          )}
-        </div>):(null)}
+          </div>
+        ) : null}
       </div>
 
       <style>{`
