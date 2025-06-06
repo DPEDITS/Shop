@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from "react";
 const Home = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [compassRotation, setCompassRotation] = useState(0);
-  const [rockHammerRotation, setRockHammerRotation] = useState(0);
   const canvasRef = useRef(null);
   const animationFrameId = useRef(null);
   const mousePos = useRef({ x: null, y: null });
@@ -15,15 +14,36 @@ const Home = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Device Orientation Compass Logic (only on mobile)
   useEffect(() => {
     if (!isMobile) return;
 
     const handleOrientation = (event) => {
-      const alpha = event.alpha;
-      if (alpha != null) {
-        setCompassRotation(360 - alpha);
+      let alpha = event.alpha;
+      if (alpha == null) return;
+
+      const orientation = window.screen.orientation?.angle ?? window.orientation ?? 0;
+      let compassHeading;
+      switch (orientation) {
+        case 0:
+          compassHeading = alpha;
+          break;
+        case 90:
+          compassHeading = alpha - 90;
+          break;
+        case 180:
+          compassHeading = alpha - 180;
+          break;
+        case -90:
+        case 270:
+          compassHeading = alpha - 270;
+          break;
+        default:
+          compassHeading = alpha;
       }
+      if (compassHeading < 0) compassHeading += 360;
+      if (compassHeading >= 360) compassHeading -= 360;
+
+      setCompassRotation(360 - compassHeading);
     };
 
     const requestPermission = async () => {
@@ -37,7 +57,7 @@ const Home = () => {
             window.addEventListener("deviceorientation", handleOrientation, true);
           }
         } catch (error) {
-          console.error("Device orientation permission denied", error);
+          console.error("Permission denied", error);
         }
       } else {
         window.addEventListener("deviceorientation", handleOrientation, true);
@@ -45,19 +65,14 @@ const Home = () => {
     };
 
     requestPermission();
-
-    return () => {
-      window.removeEventListener("deviceorientation", handleOrientation);
-    };
+    return () => window.removeEventListener("deviceorientation", handleOrientation);
   }, [isMobile]);
 
-  // Particle Network for ALL screens
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     let width = (canvas.width = canvas.offsetWidth);
     let height = (canvas.height = canvas.offsetHeight);
-
     const particlesCount = 80;
     const maxDistance = 150;
 
@@ -69,15 +84,12 @@ const Home = () => {
         this.vy = (Math.random() - 0.5) * 0.7;
         this.radius = 2;
       }
-
       move() {
         this.x += this.vx;
         this.y += this.vy;
-
         if (this.x <= 0 || this.x >= width) this.vx *= -1;
         if (this.y <= 0 || this.y >= height) this.vy *= -1;
       }
-
       draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -86,10 +98,7 @@ const Home = () => {
       }
     }
 
-    const particles = [];
-    for (let i = 0; i < particlesCount; i++) {
-      particles.push(new Particle());
-    }
+    const particles = Array.from({ length: particlesCount }, () => new Particle());
 
     const drawNetwork = () => {
       ctx.clearRect(0, 0, width, height);
@@ -97,19 +106,15 @@ const Home = () => {
 
       for (let i = 0; i < particlesCount; i++) {
         for (let j = i + 1; j < particlesCount; j++) {
-          const p1 = particles[i];
-          const p2 = particles[j];
-          const dx = p1.x - p2.x;
-          const dy = p1.y - p2.y;
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-
           if (dist < maxDistance) {
-            const alpha = 1 - dist / maxDistance;
-            ctx.strokeStyle = `rgba(0, 113, 227, ${alpha * 0.6})`;
+            ctx.strokeStyle = `rgba(0,113,227,${(1 - dist / maxDistance) * 0.6})`;
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
             ctx.stroke();
           }
         }
@@ -120,10 +125,8 @@ const Home = () => {
           const dx = p.x - mousePos.current.x;
           const dy = p.y - mousePos.current.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-
           if (dist < maxDistance) {
-            const alpha = 1 - dist / maxDistance;
-            ctx.strokeStyle = `rgba(255, 69, 0, ${alpha * 0.7})`;
+            ctx.strokeStyle = `rgba(255, 69, 0, ${(1 - dist / maxDistance) * 0.7})`;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
@@ -141,7 +144,6 @@ const Home = () => {
     };
 
     animate();
-
     const handleResize = () => {
       width = canvas.width = canvas.offsetWidth;
       height = canvas.height = canvas.offsetHeight;
@@ -153,68 +155,14 @@ const Home = () => {
       cancelAnimationFrame(animationFrameId.current);
     };
   }, []);
-  const handleOrientation = (event) => {
-    let alpha = event.alpha;
-  
-    if (alpha == null) return;
-  
-    // Get the current device orientation angle
-    const orientation = window.screen.orientation?.angle ?? window.orientation ?? 0;
-  
-    // Adjust alpha based on orientation
-    let compassHeading;
-  
-    switch (orientation) {
-      case 0: // portrait
-        compassHeading = alpha;
-        break;
-      case 90: // landscape right
-        compassHeading = alpha - 90;
-        break;
-      case 180: // portrait upside down
-        compassHeading = alpha - 180;
-        break;
-      case -90:
-      case 270: // landscape left
-        compassHeading = alpha - 270;
-        break;
-      default:
-        compassHeading = alpha;
-    }
-  
-    // Normalize compassHeading to 0-360 range
-    if (compassHeading < 0) {
-      compassHeading += 360;
-    }
-    if (compassHeading >= 360) {
-      compassHeading -= 360;
-    }
-  
-    setCompassRotation(360 - compassHeading);
-  };
-  
-  // Handle mouse move on rock hammer (desktop)
-  const rockHammerRef = useRef(null);
-  const handleRockHammerMouseMove = (e) => {
-    if (isMobile) return;
-    const rect = rockHammerRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const dx = e.clientX - centerX;
-    const dy = e.clientY - centerY;
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    setRockHammerRotation(angle);
-  };
 
   const handleMouseMove = (e) => {
-    if (isMobile) return;
     const rect = canvasRef.current.getBoundingClientRect();
     mousePos.current.x = e.clientX - rect.left;
     mousePos.current.y = e.clientY - rect.top;
   };
 
   const handleMouseLeave = () => {
-    if (isMobile) return;
     mousePos.current.x = null;
     mousePos.current.y = null;
   };
@@ -236,14 +184,8 @@ const Home = () => {
         }}
       >
         <section
-          onMouseMove={(e) => {
-            handleMouseMove(e);
-            if (!isMobile) handleRockHammerMouseMove(e);
-          }}
-          onMouseLeave={() => {
-            handleMouseLeave();
-            setRockHammerRotation(0);
-          }}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
           style={{
             height: "70vh",
             display: "flex",
@@ -254,12 +196,8 @@ const Home = () => {
             padding: "0 20px",
             userSelect: "none",
             position: "relative",
-            borderRadius: 50,
-            overflow: "hidden",
-            background: "rgba(0, 0, 0, 0.39)",
           }}
         >
-          {/* Canvas rendered on both desktop and mobile */}
           <canvas
             ref={canvasRef}
             style={{
@@ -273,7 +211,6 @@ const Home = () => {
               pointerEvents: "none",
             }}
           />
-
           <h1
             style={{
               fontSize: "3rem",
@@ -314,18 +251,17 @@ const Home = () => {
               position: "relative",
               zIndex: 1,
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "#005bb5")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "#0071e3")
-            }
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#005bb5")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0071e3")}
           >
             Buy Premium
           </button>
         </section>
+      </div>
 
-        {isMobile?(<div
+      {/* Compass Section (separate) */}
+      {isMobile && (
+        <div
           style={{
             marginTop: "10px",
             padding: "40px 0",
@@ -336,148 +272,32 @@ const Home = () => {
             borderRadius: "50px",
           }}
         >
-          {/* Show compass on mobile, else show rock hammer on desktop */}
-          {isMobile ? (
-            <div
-              style={{
-                width: 120,
-                height: 120,
-                background: "rgba(255,255,255,0.05)",
-                borderRadius: "50%",
-                backdropFilter: "blur(10px)",
-                boxShadow: "0 0 20px rgba(0,123,255,0.4)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                transition: "transform 0.3s ease-out",
-                transform: `rotate(${compassRotation}deg)`,
-              }}
-            >
-              <svg width="90" height="90" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="48"
-                  stroke="#0071e3"
-                  strokeWidth="4"
-                  fill="none"
-                />
-                <polygon
-                  points="50,10 54,50 46,50"
-                  fill="#ff4d4d"
-                  style={{ transition: "all 0.3s ease" }}
-                />
-                <polygon
-                  points="50,90 54,50 46,50"
-                  fill="#ffffff"
-                  style={{ transition: "all 0.3s ease" }}
-                />
-                <circle cx="50" cy="50" r="4" fill="#fff" />
-                <text
-                  x="50"
-                  y="20"
-                  textAnchor="middle"
-                  fontSize="10"
-                  fill="#ffffff"
-                  fontWeight="bold"
-                >
-                  N
-                </text>
-                <text
-                  x="50"
-                  y="95"
-                  textAnchor="middle"
-                  fontSize="10"
-                  fill="#ffffff"
-                  fontWeight="bold"
-                >
-                  S
-                </text>
-              </svg>
-            </div>
-          ) : (null
-          )}
-        </div>):(null)}
-      </div>
-
-      <style>{`
-        .blob {
-          position: absolute;
-          border-radius: 50%;
-          opacity: 0.6;
-          filter: blur(60px);
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
-        }
-
-        .blob1 {
-          width: 150px;
-          height: 150px;
-          background: #0071e3;
-          top: 10%;
-          left: 15%;
-          animation-name: drift1;
-          animation-duration: 12s;
-        }
-
-        .blob2 {
-          width: 200px;
-          height: 200px;
-          background: #00c6ff;
-          top: 50%;
-          left: 65%;
-          animation-name: drift2;
-          animation-duration: 15s;
-        }
-
-        .blob3 {
-          width: 120px;
-          height: 120px;
-          background: #005bb5;
-          top: 75%;
-          left: 30%;
-          animation-name: drift3;
-          animation-duration: 10s;
-        }
-
-        @keyframes drift1 {
-          0%, 100% { transform: translate(0, 0); }
-          50% { transform: translate(20px, 30px); }
-        }
-
-        @keyframes drift2 {
-          0%, 100% { transform: translate(0, 0); }
-          50% { transform: translate(-25px, 20px); }
-        }
-
-        @keyframes drift3 {
-          0%, 100% { transform: translate(0, 0); }
-          50% { transform: translate(15px, -20px); }
-        }
-
-        .glowing-circle {
-          width: 140px;
-          height: 140px;
-          border-radius: 50%;
-          background: linear-gradient(270deg, #0071e3, #00c6ff, #005bb5);
-          background-size: 600% 600%;
-          animation: gradientGlow 8s ease infinite;
-          box-shadow: 0 0 30px #0071e3, 0 0 60px #00c6ff, 0 0 90px #005bb5;
-          filter: drop-shadow(0 0 10px #0071e3);
-        }
-
-        @keyframes gradientGlow {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-      `}</style>
+          <div
+            style={{
+              width: 120,
+              height: 120,
+              background: "rgba(255,255,255,0.05)",
+              borderRadius: "50%",
+              backdropFilter: "blur(10px)",
+              boxShadow: "0 0 20px rgba(0,123,255,0.4)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              transition: "transform 0.3s ease-out",
+              transform: `rotate(${compassRotation}deg)`,
+            }}
+          >
+            <svg width="90" height="90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="48" stroke="#0071e3" strokeWidth="4" fill="none" />
+              <polygon points="50,10 54,50 46,50" fill="#ff4d4d" />
+              <polygon points="50,90 54,50 46,50" fill="#ffffff" />
+              <circle cx="50" cy="50" r="4" fill="#fff" />
+              <text x="50" y="20" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">N</text>
+              <text x="50" y="95" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">S</text>
+            </svg>
+          </div>
+        </div>
+      )}
     </>
   );
 };
