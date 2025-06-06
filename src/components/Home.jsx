@@ -18,32 +18,31 @@ const Home = () => {
     if (!isMobile) return;
 
     const handleOrientation = (event) => {
-      let alpha = event.alpha;
-      if (alpha == null) return;
+      // iOS provides webkitCompassHeading directly
+      let heading = event.webkitCompassHeading ?? null;
 
-      const orientation = window.screen.orientation?.angle ?? window.orientation ?? 0;
-      let compassHeading;
-      switch (orientation) {
-        case 0:
-          compassHeading = alpha;
-          break;
-        case 90:
-          compassHeading = alpha - 90;
-          break;
-        case 180:
-          compassHeading = alpha - 180;
-          break;
-        case -90:
-        case 270:
-          compassHeading = alpha - 270;
-          break;
-        default:
-          compassHeading = alpha;
+      if (heading === null || heading === undefined) {
+        // Use alpha angle for other devices
+        let alpha = event.alpha;
+        if (alpha == null) return;
+
+        // Adjust alpha by screen orientation angle
+        const orientation = window.screen.orientation?.angle ?? window.orientation ?? 0;
+
+        // Normalize orientation to [0, 360)
+        const normOrientation = (orientation + 360) % 360;
+
+        // Calculate compass heading with screen orientation compensation
+        heading = alpha - normOrientation;
+
+        // Normalize to [0, 360)
+        if (heading < 0) heading += 360;
+        if (heading >= 360) heading -= 360;
       }
-      if (compassHeading < 0) compassHeading += 360;
-      if (compassHeading >= 360) compassHeading -= 360;
 
-      setCompassRotation(360 - compassHeading);
+      // The compass needle should point *towards* north, so rotate accordingly:
+      // We rotate by negative heading to rotate the needle correctly.
+      setCompassRotation(heading);
     };
 
     const requestPermission = async () => {
@@ -65,6 +64,7 @@ const Home = () => {
     };
 
     requestPermission();
+
     return () => window.removeEventListener("deviceorientation", handleOrientation);
   }, [isMobile]);
 
@@ -292,23 +292,51 @@ const Home = () => {
               }}
             >
               <circle cx="50" cy="50" r="48" stroke="#0071e3" strokeWidth="4" fill="none" />
-              <polygon points="50,90 54,50 46,50" fill="#ffffff" />
+              <polygon points="50,90 54,50 46,50" fill="#ffffff" /> {/* South pointer */}
               <circle cx="50" cy="50" r="4" fill="#fff" />
-              <text x="50" y="12" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">
+              <text
+                x="50"
+                y="12"
+                textAnchor="middle"
+                fontSize="10"
+                fill="#ffffff"
+                fontWeight="bold"
+              >
                 N
               </text>
-              <text x="50" y="98" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">
+              <text
+                x="50"
+                y="98"
+                textAnchor="middle"
+                fontSize="10"
+                fill="#ffffff"
+                fontWeight="bold"
+              >
                 S
               </text>
-              <text x="88" y="54" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">
+              <text
+                x="88"
+                y="54"
+                textAnchor="middle"
+                fontSize="10"
+                fill="#ffffff"
+                fontWeight="bold"
+              >
                 E
               </text>
-              <text x="12" y="54" textAnchor="middle" fontSize="10" fill="#ffffff" fontWeight="bold">
+              <text
+                x="12"
+                y="54"
+                textAnchor="middle"
+                fontSize="10"
+                fill="#ffffff"
+                fontWeight="bold"
+              >
                 W
               </text>
             </svg>
 
-            {/* Rotating Needle Only */}
+            {/* Rotating Needle */}
             <svg
               width="120"
               height="120"
@@ -323,7 +351,7 @@ const Home = () => {
                 zIndex: 1,
               }}
             >
-              <polygon points="50,10 54,50 46,50" fill="#ff4d4d" />
+              <polygon points="50,10 54,50 46,50" fill="#ff4d4d" /> {/* North pointer */}
             </svg>
           </div>
         </div>
