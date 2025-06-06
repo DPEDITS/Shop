@@ -3,9 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 const Home = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [compassRotation, setCompassRotation] = useState(0);
-  const [tiltX, setTiltX] = useState(0);
-  const [tiltY, setTiltY] = useState(0);
-  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [rockHammerRotation, setRockHammerRotation] = useState(0);
   const canvasRef = useRef(null);
   const animationFrameId = useRef(null);
   const mousePos = useRef({ x: null, y: null });
@@ -17,75 +15,44 @@ const Home = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Device Orientation Compass Logic + Tilt for blobs (only on mobile)
+  // Device Orientation Compass Logic (only on mobile)
   useEffect(() => {
-    if (!isMobile || !permissionGranted) return;
+    if (!isMobile) return;
 
     const handleOrientation = (event) => {
-      let alpha = event.alpha;
-
-      if (alpha == null) return;
-
-      // Adjust alpha based on screen orientation
-      let rotation = 360 - alpha;
-
-      // iOS and some devices require compensation for screen orientation
-      if (window.screen.orientation) {
-        const angle = window.screen.orientation.angle || 0;
-        rotation += angle;
-      } else if (window.orientation != null) {
-        rotation += window.orientation;
+      const alpha = event.alpha;
+      if (alpha != null) {
+        setCompassRotation(360 - alpha);
       }
-
-      // Normalize rotation to 0-360
-      rotation = ((rotation % 360) + 360) % 360;
-
-      setCompassRotation(rotation);
-
-      // Tilt values
-      let xTilt = event.gamma || 0; // left-right tilt [-90,90]
-      let yTilt = event.beta || 0;  // front-back tilt [-180,180]
-
-      xTilt = Math.min(Math.max(xTilt, -30), 30);
-      yTilt = Math.min(Math.max(yTilt, -30), 30);
-
-      setTiltX(xTilt);
-      setTiltY(yTilt);
     };
 
-    window.addEventListener("deviceorientation", handleOrientation, true);
+    const requestPermission = async () => {
+      if (
+        typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function"
+      ) {
+        try {
+          const response = await DeviceOrientationEvent.requestPermission();
+          if (response === "granted") {
+            window.addEventListener("deviceorientation", handleOrientation, true);
+          }
+        } catch (error) {
+          console.error("Device orientation permission denied", error);
+        }
+      } else {
+        window.addEventListener("deviceorientation", handleOrientation, true);
+      }
+    };
+
+    requestPermission();
 
     return () => {
       window.removeEventListener("deviceorientation", handleOrientation);
     };
-  }, [isMobile, permissionGranted]);
+  }, [isMobile]);
 
-  // Request permission on iOS and modern Android
-  const requestOrientationPermission = async () => {
-    if (
-      typeof DeviceOrientationEvent !== "undefined" &&
-      typeof DeviceOrientationEvent.requestPermission === "function"
-    ) {
-      try {
-        const response = await DeviceOrientationEvent.requestPermission();
-        if (response === "granted") {
-          setPermissionGranted(true);
-        } else {
-          alert("Permission denied for Device Orientation");
-        }
-      } catch (error) {
-        alert("Device Orientation permission error: " + error);
-      }
-    } else {
-      // Permission not required
-      setPermissionGranted(true);
-    }
-  };
-
-  // Particle Network for desktop only
+  // Particle Network for ALL screens
   useEffect(() => {
-    if (isMobile) return; // skip particle animation on mobile
-
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     let width = (canvas.width = canvas.offsetWidth);
@@ -185,7 +152,7 @@ const Home = () => {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId.current);
     };
-  }, [isMobile]);
+  }, []);
 
   // Handle mouse move on rock hammer (desktop)
   const rockHammerRef = useRef(null);
@@ -212,23 +179,6 @@ const Home = () => {
     mousePos.current.x = null;
     mousePos.current.y = null;
   };
-
-  // Mobile blobs style (parallax by tilt)
-  const blobStyle = (size, top, left, color, index) => ({
-    position: "absolute",
-    width: size,
-    height: size,
-    backgroundColor: color,
-    borderRadius: "50%",
-    filter: "blur(40px)",
-    opacity: 0.6,
-    top,
-    left,
-    pointerEvents: "none",
-    transform: `translate3d(${tiltX * (index + 1)}px, ${tiltY * (index + 1)}px, 0)`,
-    transition: "transform 0.1s ease-out",
-    mixBlendMode: "screen",
-  });
 
   return (
     <>
@@ -270,31 +220,20 @@ const Home = () => {
             background: "rgba(0, 0, 0, 0.39)",
           }}
         >
-          {/* Canvas rendered only on desktop */}
-          {!isMobile && (
-            <canvas
-              ref={canvasRef}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                zIndex: 0,
-                borderRadius: 50,
-                pointerEvents: "none",
-              }}
-            />
-          )}
-
-          {/* Mobile floating blobs */}
-          {isMobile && (
-            <>
-              <div style={blobStyle(150, "20%", "20%", "#0071e3", 1)} />
-              <div style={blobStyle(200, "50%", "65%", "#00c6ff", 2)} />
-              <div style={blobStyle(120, "75%", "30%", "#005bb5", 3)} />
-            </>
-          )}
+          {/* Canvas rendered on both desktop and mobile */}
+          <canvas
+            ref={canvasRef}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 0,
+              borderRadius: 50,
+              pointerEvents: "none",
+            }}
+          />
 
           <h1
             style={{
@@ -347,101 +286,81 @@ const Home = () => {
           </button>
         </section>
 
-        {isMobile ? (
-          <div
-            style={{
-              marginTop: "10px",
-              padding: "40px 0",
-              background: "rgba(0, 0, 0, 0.39)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: "50px",
-              flexDirection: "column",
-            }}
-          >
-            {/* Show compass on mobile */}
-            {!permissionGranted ? (
-              <button
-                onClick={requestOrientationPermission}
-                style={{
-                  padding: "12px 30px",
-                  fontSize: "1rem",
-                  borderRadius: 30,
-                  border: "none",
-                  backgroundColor: "#0071e3",
-                  color: "white",
-                  cursor: "pointer",
-                  userSelect: "none",
-                  marginBottom: 20,
-                }}
-              >
-                Enable Compass
-              </button>
-            ) : (
-              <div
-                style={{
-                  width: 120,
-                  height: 120,
-                  background: "rgba(255,255,255,0.05)",
-                  borderRadius: "50%",
-                  backdropFilter: "blur(10px)",
-                  boxShadow: "0 0 20px rgba(0,123,255,0.4)",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  transition: "transform 0.3s ease-out",
-                  transform: `rotate(${compassRotation}deg)`,
-                }}
-              >
-                <svg width="90" height="90" viewBox="0 0 100 100">
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="48"
-                    stroke="#0071e3"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <polygon
-                    points="50,10 54,50 46,50"
-                    fill="#ff4d4d"
-                    style={{ transition: "all 0.3s ease" }}
-                  />
-                  <polygon
-                    points="50,90 54,50 46,50"
-                    fill="#ffffff"
-                    style={{ transition: "all 0.3s ease" }}
-                  />
-                  <circle cx="50" cy="50" r="4" fill="#fff" />
-                  <text
-                    x="50"
-                    y="20"
-                    textAnchor="middle"
-                    fontSize="10"
-                    fill="#ffffff"
-                    fontWeight="bold"
-                  >
-                    N
-                  </text>
-                  <text
-                    x="50"
-                    y="95"
-                    textAnchor="middle"
-                    fontSize="10"
-                    fill="#ffffff"
-                    fontWeight="bold"
-                  >
-                    S
-                  </text>
-                </svg>
-              </div>
-            )}
-          </div>
-        ) : null}
+        {isMobile?(<div
+          style={{
+            marginTop: "10px",
+            padding: "40px 0",
+            background: "rgba(0, 0, 0, 0.39)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            borderRadius: "50px",
+          }}
+        >
+          {/* Show compass on mobile, else show rock hammer on desktop */}
+          {isMobile ? (
+            <div
+              style={{
+                width: 120,
+                height: 120,
+                background: "rgba(255,255,255,0.05)",
+                borderRadius: "50%",
+                backdropFilter: "blur(10px)",
+                boxShadow: "0 0 20px rgba(0,123,255,0.4)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                transition: "transform 0.3s ease-out",
+                transform: `rotate(${compassRotation}deg)`,
+              }}
+            >
+              <svg width="90" height="90" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="48"
+                  stroke="#0071e3"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <polygon
+                  points="50,10 54,50 46,50"
+                  fill="#ff4d4d"
+                  style={{ transition: "all 0.3s ease" }}
+                />
+                <polygon
+                  points="50,90 54,50 46,50"
+                  fill="#ffffff"
+                  style={{ transition: "all 0.3s ease" }}
+                />
+                <circle cx="50" cy="50" r="4" fill="#fff" />
+                <text
+                  x="50"
+                  y="20"
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="#ffffff"
+                  fontWeight="bold"
+                >
+                  N
+                </text>
+                <text
+                  x="50"
+                  y="95"
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="#ffffff"
+                  fontWeight="bold"
+                >
+                  S
+                </text>
+              </svg>
+            </div>
+          ) : (null
+          )}
+        </div>):(null)}
       </div>
 
-      {/* Your existing styles here */}
       <style>{`
         .blob {
           position: absolute;
