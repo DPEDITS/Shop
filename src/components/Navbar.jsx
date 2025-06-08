@@ -14,7 +14,7 @@ const Navbar = () => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
 
-    const API_URL = process.env.REACT_APP_API_URL;
+    const API_URL = "https://my-backend-upgz.onrender.com";
 
     const fetchUser = async () => {
       const token = localStorage.getItem("token");
