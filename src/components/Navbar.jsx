@@ -14,7 +14,7 @@ const Navbar = () => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
 
-    const API_URL = "https://my-backend-upgz.onrender.com";
+    const API_URL = import.meta.env.VITE_API_URL;
 
     const fetchUser = async () => {
       const token = localStorage.getItem("token");
@@ -33,6 +33,7 @@ const Navbar = () => {
     };
     
     fetchUser();
+    
 
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "light") {

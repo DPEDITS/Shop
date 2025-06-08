@@ -55,8 +55,11 @@ const [showPassword, setShowPassword] = useState(false);
       return;
     }
     setError("");
+  
+    const API_URL = import.meta.env.VITE_API_URL;
+  
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
+      const res = await axios.post(`${API_URL}/api/auth/login`, {
         email: formData.email,
         password: formData.password,
       });
@@ -69,7 +72,7 @@ const [showPassword, setShowPassword] = useState(false);
       );
     }
   };
-
+  
 
 
 
