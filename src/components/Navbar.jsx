@@ -14,11 +14,13 @@ const Navbar = () => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
 
+    const API_URL = process.env.REACT_APP_API_URL;
+
     const fetchUser = async () => {
       const token = localStorage.getItem("token");
       if (token) {
         try {
-          const res = await axios.get("http://localhost:5000/api/auth/profile", {
+          const res = await axios.get(`${API_URL}/api/auth/profile`, {
             headers: { Authorization: token },
           });
           setUsername(res.data.fullName || res.data.name || null);
@@ -29,7 +31,7 @@ const Navbar = () => {
         setUsername(null);
       }
     };
-
+    
     fetchUser();
 
     const savedTheme = localStorage.getItem("theme");
