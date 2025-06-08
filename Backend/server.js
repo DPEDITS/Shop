@@ -12,7 +12,7 @@ const app = express();
 // ✅ Replace default CORS with this:
 app.use(
   cors({
-    origin: ["my-frontend29.netlify.app"], // ✅ replace with your actual Netlify URL
+    origin: ["my-frontend29.netlify.app","geocalculatorr.netlify.app"], // ✅ replace with your actual Netlify URL
     credentials: true, // ✅ only if you're using cookies or tokens in headers
   })
 );
