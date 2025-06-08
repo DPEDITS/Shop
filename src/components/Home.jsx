@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from "react";
 const Home = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [compassRotation, setCompassRotation] = useState(0);
-  const [rockHammerRotation, setRockHammerRotation] = useState(0);
   const canvasRef = useRef(null);
   const animationFrameId = useRef(null);
   const mousePos = useRef({ x: null, y: null });
@@ -153,20 +152,6 @@ const Home = () => {
       cancelAnimationFrame(animationFrameId.current);
     };
   }, []);
-
-  // Handle mouse move on rock hammer (desktop)
-  const rockHammerRef = useRef(null);
-  const handleRockHammerMouseMove = (e) => {
-    if (isMobile) return;
-    const rect = rockHammerRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const dx = e.clientX - centerX;
-    const dy = e.clientY - centerY;
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    setRockHammerRotation(angle);
-  };
-
   const handleMouseMove = (e) => {
     if (isMobile) return;
     const rect = canvasRef.current.getBoundingClientRect();
