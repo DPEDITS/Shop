@@ -59,22 +59,24 @@ const [showPassword, setShowPassword] = useState(false);
     const API_URL = import.meta.env.VITE_API_URL;
   
     try {
-      const res = await axios.post(`${API_URL}/api/auth/login`, {
-        email: formData.email,
-        password: formData.password,
-      });
+      const res = await axios.post(
+        `${API_URL}/api/auth/login`,
+        {
+          email: formData.email,
+          password: formData.password,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+  
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/");
     } catch (err) {
-      setError(
-        err.response?.data?.msg || "Login failed. Try again."
-      );
+      setError(err.response?.data?.msg || "Login failed. Try again.");
     }
   };
-  
-
-
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

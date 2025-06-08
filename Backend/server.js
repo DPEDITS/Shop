@@ -9,17 +9,19 @@ connectDB();
 
 const app = express();
 
-// ✅ Replace default CORS with this:
 app.use(
-  cors({
-    origin: ["geocalculatorr.netlify.app"], // ✅ replace with your actual Netlify URL
-    credentials: true, // ✅ only if you're using cookies or tokens in headers
-  })
-);
+    cors({
+      origin: [
+        "http://localhost:3000", 
+        "https://geocalculatorr.netlify.app"
+      ],
+      credentials: true,
+    })
+  );
+  
+app.use(express.json()); // To parse incoming JSON requests
 
-app.use(express.json());
-
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes); // Routes for authentication
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
