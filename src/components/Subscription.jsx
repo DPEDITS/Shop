@@ -10,8 +10,8 @@ const plans = [
   },
   {
     name: "Geo-Company",
-    monthly: 40,
-    yearly: 432,
+    monthly: 250,
+    yearly: 2700,
     description: "Up to 6 users, shared access",
     features: ["Feature A", "Feature B", "Feature C", "Feature D"],
   },
