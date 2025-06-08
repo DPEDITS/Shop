@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -47,33 +48,27 @@ const [showPassword, setShowPassword] = useState(false);
     }));
   };
 
-const handleSubmit = (e) => {
-  e.preventDefault();
-
-  if (!formData.email || !formData.password) {
-    setError("Please fill in both fields.");
-    return;
-  }
-  setError("");
-
-  const savedData = localStorage.getItem("FormData");
-
-  if (!savedData) {
-    setError("No registered user found. Please sign up first.");
-    return;
-  }
-
-  const userData = JSON.parse(savedData);
-
-  if (formData.email === userData.email && formData.password === userData.password) {
-    // Assuming userData has username stored as userName or username key
-    const usernameToStore = userData.userName || userData.username || "User";
-    localStorage.setItem("username", usernameToStore);
-    navigate("/");
-  } else {
-    setError("Invalid email or password.");
-  }
-};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.email || !formData.password) {
+      setError("Please fill in both fields.");
+      return;
+    }
+    setError("");
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/login", {
+        email: formData.email,
+        password: formData.password,
+      });
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      navigate("/");
+    } catch (err) {
+      setError(
+        err.response?.data?.msg || "Login failed. Try again."
+      );
+    }
+  };
 
 
 

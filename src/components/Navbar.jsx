@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 
 const Navbar = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -7,22 +8,29 @@ const Navbar = () => {
   const [username, setUsername] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Apply saved theme on load
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
 
-    const storedUser = localStorage.getItem("FormData");
-    if (storedUser) {
-      try {
-        const userObj = JSON.parse(storedUser);
-        if (userObj.name) setUsername(userObj.name);
-        else setUsername(null);
-      } catch {
+    const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const res = await axios.get("http://localhost:5000/api/auth/profile", {
+            headers: { Authorization: token },
+          });
+          setUsername(res.data.fullName || res.data.name || null);
+        } catch {
+          setUsername(null);
+        }
+      } else {
         setUsername(null);
       }
-    }
+    };
+
+    fetchUser();
 
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "light") {
@@ -34,7 +42,7 @@ const Navbar = () => {
     }
 
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [location.pathname]); // refetch user on route change
 
   const toggleTheme = () => {
     const isDark = !isDarkMode;
@@ -44,18 +52,33 @@ const Navbar = () => {
     localStorage.setItem("theme", isDark ? "dark" : "light");
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setUsername(null);
+    navigate("/login");
+    setMenuOpen(false);
+  };
+
   const navLinks = [
     { name: "DipCalculator" },
     { name: "StrikeCalculator" },
     { name: "Merchandise" },
-    { name: "Support", route:"/support" },
+    { name: "Support", route: "/support" },
     ...(username
-      ? [{ name: `Hii ${username}` }]
+      ? [
+          { name: `Hii ${username}` },
+          { name: "Logout", action: handleLogout }
+        ]
       : [{ name: "LogIn", route: "/login" }]),
   ];
 
   const handleLinkClick = (link) => {
-    if (link.route) navigate(link.route);
+    if (link.action) {
+      link.action();
+    } else if (link.route) {
+      navigate(link.route);
+      setMenuOpen(false);
+    }
     setMenuOpen(false);
   };
 
@@ -196,12 +219,11 @@ const Navbar = () => {
           )}
 
           {/* Theme Toggle Button */}
-<div className="glass-toggle" onClick={toggleTheme}>
-  <div className={`toggle-thumb ${isDarkMode ? "dark" : "light"}`}>
-    {isDarkMode ? "🌙" : "☀️"}
-  </div>
-</div>
-
+          <div className="glass-toggle" onClick={toggleTheme}>
+            <div className={`toggle-thumb ${isDarkMode ? "dark" : "light"}`}>
+              {isDarkMode ? "🌙" : "☀️"}
+            </div>
+          </div>
         </div>
       </div>
 

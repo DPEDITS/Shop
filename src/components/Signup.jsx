@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -47,16 +48,29 @@ const Signup = () => {
     }));
   };
 
-const handleSubmit = (e) => {
-  e.preventDefault();
-  if (!formData.name || !formData.email || !formData.password) {
-    setError("Please fill in all fields.");
-    return;
-  }
-  setError("");
-  localStorage.setItem("FormData", JSON.stringify(formData));
-  navigate("/login");
-};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.password) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    setError("");
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/register", {
+        fullName: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+      // Save token and user info
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      navigate("/");
+    } catch (err) {
+      setError(
+        err.response?.data?.msg || "Registration failed. Try again."
+      );
+    }
+  };
 
 
   const handleChange = (e) => {
