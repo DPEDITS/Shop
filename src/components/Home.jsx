@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-
+import { useNavigate } from "react-router-dom";
+import Subscription from "./Subscription";
 const Home = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [compassRotation, setCompassRotation] = useState(0);
   const canvasRef = useRef(null);
   const animationFrameId = useRef(null);
   const mousePos = useRef({ x: null, y: null });
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -245,6 +247,7 @@ const Home = () => {
             Discover the latest technology and accessories from Geo-Tools
           </p>
           <button
+          onClick={() => navigate("/subscription")}
             style={{
               marginTop: 30,
               padding: "12px 30px",
