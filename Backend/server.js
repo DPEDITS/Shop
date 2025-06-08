@@ -8,7 +8,15 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
+
+// ✅ Replace default CORS with this:
+app.use(
+  cors({
+    origin: ["my-frontend29.netlify.app"], // ✅ replace with your actual Netlify URL
+    credentials: true, // ✅ only if you're using cookies or tokens in headers
+  })
+);
+
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
